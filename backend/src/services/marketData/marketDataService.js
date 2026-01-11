@@ -16,8 +16,8 @@ class MarketDataService {
         this.cacheTimeout = 60000; // 1 minute cache for quotes
         this.candleCacheTimeout = 300000; // 5 minute cache for historical data
 
-        // Rate limiter for TwelveData API (8 credits/minute on free tier)
-        const rateLimitConfig = config.rateLimit?.twelveData || { maxCredits: 8, windowMs: 60000 };
+        // Rate limiter for TwelveData API (8 credits/minute on free tier, using 7 for safety)
+        const rateLimitConfig = config.rateLimit?.twelveData || { maxCredits: 7, windowMs: 60000 };
         this.rateLimiter = rateLimiterRegistry.getLimiter('twelveData', {
             maxTokens: rateLimitConfig.maxCredits,
             windowMs: rateLimitConfig.windowMs,

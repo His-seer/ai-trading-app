@@ -51,7 +51,7 @@ const config = {
     // Rate Limiting
     rateLimit: {
         twelveData: {
-            maxCredits: 8,        // Max API calls per window (free tier limit)
+            maxCredits: 7,        // Max API calls per window (reduced to 7 for safety)
             windowMs: 60000,      // 1 minute window
         },
     },
