@@ -1,0 +1,178 @@
+.decisions {
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty svg {
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.5;
+}
+
+.empty p {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.empty span {
+    font-size: 0.875rem;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.decisionItem {
+    padding: var(--spacing-md);
+    background: var(--bg-glass);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.clearBtn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.clearBtn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+.symbolInfo {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.symbol {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.recommendation {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.buy {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.sell {
+    background: rgba(239, 68, 68, 0.2);
+    color: var(--danger);
+}
+
+.hold {
+    background: rgba(156, 163, 175, 0.2);
+    color: var(--text-secondary);
+}
+
+.confidenceBadge {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.confidenceBadge.high {
+    background: rgba(16, 185, 129, 0.2);
+    color: var(--success);
+}
+
+.confidenceBadge.medium {
+    background: rgba(245, 158, 11, 0.2);
+    color: var(--warning);
+}
+
+.confidenceBadge.low {
+    background: rgba(156, 163, 175, 0.2);
+    color: var(--text-secondary);
+}
+
+.indicators {
+    display: flex;
+    gap: var(--spacing-md);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    font-family: 'Menlo', 'Monaco', monospace;
+}
+
+.reasoning {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+    line-height: 1.5;
+    padding: var(--spacing-sm);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--spacing-sm);
+}
+
+.reasoning p {
+    margin: 0;
+}
+
+.action {
+    display: flex;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.actionLabel {
+    color: var(--text-muted);
+}
+
+.actionValue {
+    color: var(--accent-primary);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.timestamp {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}

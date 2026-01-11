@@ -1,0 +1,66 @@
+.positions {
+    overflow: hidden;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty svg {
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.5;
+}
+
+.empty p {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.empty span {
+    font-size: 0.875rem;
+}
+
+.symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+    display: block;
+}
+
+.marketType {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+
+.price {
+    font-family: 'Menlo', 'Monaco', monospace;
+    font-size: 0.875rem;
+}
+
+.stopLoss,
+.takeProfit {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-family: 'Menlo', 'Monaco', monospace;
+    font-size: 0.875rem;
+}
+
+.stopLoss {
+    color: var(--danger);
+}
+
+.takeProfit {
+    color: var(--success);
+}
+
+.date {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}

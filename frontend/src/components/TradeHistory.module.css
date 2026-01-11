@@ -1,0 +1,125 @@
+.history {
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.empty p {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.empty span {
+    font-size: 0.875rem;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    overflow-y: auto;
+    flex: 1;
+}
+
+.tradeItem {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    background: var(--bg-glass);
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.tradeItem:hover {
+    border-color: var(--border-color);
+}
+
+.tradeMain {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.tradeSymbol {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.tradePrices {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: 'Menlo', 'Monaco', monospace;
+}
+
+.tradePrices svg {
+    color: var(--text-muted);
+}
+
+.tradePnL {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.pnlValue {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-weight: 600;
+}
+
+.pnlPercent {
+    font-size: 0.75rem;
+}
+
+.positive {
+    color: var(--success);
+}
+
+.negative {
+    color: var(--danger);
+}
+
+.tradeReason {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.reasonLabel {
+    color: var(--text-muted);
+}
+
+.reasonValue {
+    color: var(--text-secondary);
+    text-transform: capitalize;
+}
+
+.tradeDate {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}

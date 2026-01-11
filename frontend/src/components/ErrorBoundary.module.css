@@ -1,0 +1,165 @@
+.errorContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.errorContent {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    padding: 30px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.errorHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.errorHeader h2 {
+    margin: 0;
+    color: #d32f2f;
+    font-size: 1.5rem;
+    flex: 1;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    cursor: pointer;
+    color: #999;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.errorMessage {
+    color: #666;
+    margin: 15px 0;
+    line-height: 1.6;
+    word-break: break-word;
+    font-size: 0.95rem;
+}
+
+.errorDetails {
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 12px;
+    margin: 20px 0;
+    cursor: pointer;
+}
+
+.errorDetails summary {
+    font-weight: 600;
+    color: #666;
+    user-select: none;
+    padding: 5px;
+}
+
+.errorDetails summary:hover {
+    color: #333;
+}
+
+.errorStack {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 0.75rem;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    color: #333;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.errorActions {
+    display: flex;
+    gap: 12px;
+    margin: 25px 0 15px;
+}
+
+.primaryButton,
+.secondaryButton {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.primaryButton {
+    background: #d32f2f;
+    color: white;
+}
+
+.primaryButton:hover {
+    background: #b71c1c;
+    box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+}
+
+.secondaryButton {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.secondaryButton:hover {
+    background: #e0e0e0;
+}
+
+.errorHint {
+    color: #999;
+    font-size: 0.85rem;
+    margin: 0;
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .errorContainer {
+        padding: 10px;
+    }
+
+    .errorContent {
+        padding: 20px;
+    }
+
+    .errorHeader h2 {
+        font-size: 1.2rem;
+    }
+
+    .errorActions {
+        flex-direction: column;
+    }
+}

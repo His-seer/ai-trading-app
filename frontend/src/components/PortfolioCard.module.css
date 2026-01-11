@@ -1,0 +1,143 @@
+.portfolio {
+    background: linear-gradient(135deg, var(--bg-card) 0%, rgba(59, 130, 246, 0.1) 100%);
+}
+
+.skeleton {
+    height: 200px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-md);
+}
+
+.balanceSection {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-lg);
+}
+
+.mainBalance {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.pnlSection {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.pnlItem {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.pnlValue {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+}
+
+.pnlValue.positive {
+    color: var(--success);
+}
+
+.pnlValue.negative {
+    color: var(--danger);
+}
+
+.statsRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-md);
+    padding: var(--spacing-md) 0;
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: var(--spacing-md);
+}
+
+.stat {
+    text-align: center;
+}
+
+.statValue {
+    display: block;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.statLabel {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.progressBar {
+    margin-top: var(--spacing-sm);
+}
+
+.progressLabel {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.progressTrack {
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease;
+}
+
+.progressFill.positive {
+    background: var(--success);
+}
+
+.progressFill.negative {
+    background: var(--danger);
+}
+
+@media (max-width: 640px) {
+    .balanceSection {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+
+    .pnlSection {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .pnlItem {
+        align-items: flex-start;
+    }
+
+    .statsRow {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
