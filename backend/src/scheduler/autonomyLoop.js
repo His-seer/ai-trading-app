@@ -34,10 +34,18 @@ class AutonomyLoop {
             await this.runCycle();
         });
 
+        // Schedule: Reset daily trades at midnight (00:00)
+        this.resetJob = cron.schedule('0 0 * * *', async () => {
+            console.log('🔄 Running daily trade count reset...');
+            botDb.resetDailyTrades();
+            console.log('✅ Daily trades reset to 0');
+        });
+
         this.isRunning = true;
         botDb.setRunning(true);
 
         console.log(`🤖 Autonomy loop started - checking every ${interval} minutes`);
+        console.log(`📅 Daily reset scheduled for midnight`);
         console.log(`📊 Market: ${market.toUpperCase()}`);
 
         // Run first cycle immediately
@@ -60,6 +68,11 @@ class AutonomyLoop {
         if (this.cronJob) {
             this.cronJob.stop();
             this.cronJob = null;
+        }
+
+        if (this.resetJob) {
+            this.resetJob.stop();
+            this.resetJob = null;
         }
 
         this.isRunning = false;
@@ -130,6 +143,7 @@ class AutonomyLoop {
                     confidence: aiDecision.confidence,
                     reasoning: aiDecision.reasoning,
                     actionTaken: actionResult.action,
+                    aiModel: aiDecision.aiModel,
                 });
 
                 console.log(`  Action: ${actionResult.action}`);
@@ -167,7 +181,14 @@ class AutonomyLoop {
             }
 
             // Verify technical conditions (double-check AI)
-            if (indicators.emaShort > indicators.emaLong && indicators.rsi > config.indicators.rsiBuyThreshold) {
+            // UPDATE: We now trust the AI's "Score" and rules. 
+            // If AI says BUY and we are here, it means we should proceed (unless Risk Manager stops us).
+
+            // Optional: You could add a "sanity check" here if you wanted, 
+            // but for "Moderate" trades we want to allow them even if EMA is not perfect yet (early entry).
+            const isActionable = true;
+
+            if (isActionable) {
                 const result = tradingEngine.openPosition(
                     symbol,
                     marketType,
@@ -264,4 +285,6 @@ class AutonomyLoop {
     }
 }
 
+// Export both the class and a default singleton instance
+export { AutonomyLoop };
 export default new AutonomyLoop();

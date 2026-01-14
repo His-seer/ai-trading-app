@@ -26,7 +26,7 @@ export default function BotControls({ botStatus, market, onStart, onStop, onTrig
                     </div>
                     <div className={styles.infoItem}>
                         <AlertTriangle size={16} />
-                        <span>{botStatus?.tradesToday || 0}/{botStatus?.maxTradesPerDay || 3} trades today</span>
+                        <span>{botStatus?.tradesToday || 0}/{botStatus?.maxTradesPerDay || 5} trades today</span>
                     </div>
                     {botStatus?.lastCheckAt && (
                         <div className={styles.infoItem}>
@@ -53,8 +53,32 @@ export default function BotControls({ botStatus, market, onStart, onStop, onTrig
                             </button>
                         </>
                     ) : (
-                        <button className="btn btn-success" onClick={onStart}>
-                            <Play size={18} /> Start Bot
+                        <>
+                            <button className="btn btn-success" onClick={onStart}>
+                                <Play size={18} /> Start Bot
+                            </button>
+                        </>
+                    )}
+                </div>
+
+                <div style={{ marginTop: '1rem', borderTop: '1px solid #333', paddingTop: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    {!isRunning && (
+                        <button
+                            className="btn btn-outline btn-sm"
+                            style={{ color: '#ff6b6b', borderColor: '#ff6b6b', fontSize: '0.8rem' }}
+                            onClick={() => {
+                                if (confirm('⚠️ DANGER: This will delete ALL trade history, close ALL positions, and reset your balance to $10,000.\n\nAre you sure you want to reset your account?')) {
+                                    // Call the reset API
+                                    import('../services/api').then(api => {
+                                        api.resetAccount().then(() => {
+                                            alert('Account reset successfully.');
+                                            window.location.reload();
+                                        });
+                                    });
+                                }
+                            }}
+                        >
+                            <RefreshCw size={14} style={{ marginRight: '5px' }} /> Reset Account
                         </button>
                     )}
                 </div>

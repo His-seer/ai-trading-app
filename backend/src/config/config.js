@@ -14,14 +14,14 @@ const config = {
     // Trading Parameters
     initialBalance: parseFloat(process.env.INITIAL_BALANCE) || 10000,
     maxRiskPerTrade: parseFloat(process.env.MAX_RISK_PER_TRADE) || 0.02,
-    maxTradesPerDay: parseInt(process.env.MAX_TRADES_PER_DAY) || 3,
+    maxTradesPerDay: parseInt(process.env.MAX_TRADES_PER_DAY) || 5,
     autonomyIntervalMinutes: parseInt(process.env.AUTONOMY_INTERVAL_MINUTES) || 15,
 
     // Supported Assets
-    stocks: ['AAPL', 'MSFT', 'NVDA', 'SPY', 'TSLA', 'GOOG', 'AMZN', 'META', 'NFLX', 'UBER'],
-    forex: ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD', 'USD/CAD', 'NZD/USD'],
-    crypto: ['BTC/USD', 'ETH/USD', 'XRP/USD', 'ADA/USD', 'SOL/USD'],
-    globalStocks: ['0700.HK', 'ASML.AS', 'BABA', 'SAP', 'UNIQLO'],  // Hong Kong, Netherlands, China, Germany, Japan
+    stocks: ['AAPL', 'MSFT', 'NVDA'],
+    forex: ['EUR/USD', 'GBP/USD'],
+    crypto: [],
+    globalStocks: [],
 
     // Technical Indicators
     indicators: {
@@ -46,12 +46,17 @@ const config = {
     },
 
     // Gemini Model
-    geminiModel: 'gemini-2.0-flash',
+    geminiModel: 'gemini-2.5-flash',
+    fallbackGeminiModel: 'gemini-2.0-flash',
 
     // Rate Limiting
     rateLimit: {
         twelveData: {
             maxCredits: 7,        // Max API calls per window (reduced to 7 for safety)
+            windowMs: 60000,      // 1 minute window
+        },
+        gemini: {
+            maxRequests: 10,      // Max requests per window (free tier: ~10-15 req/min)
             windowMs: 60000,      // 1 minute window
         },
     },

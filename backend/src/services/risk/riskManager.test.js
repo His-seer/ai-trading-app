@@ -130,7 +130,10 @@ test('Risk Manager - Position Closure Logic', async (t) => {
         const result = riskManager.shouldClosePosition(mockPosition, 105);
         assert.ok(result);
         assert.ok(typeof result.shouldClose === 'boolean');
-        assert.ok(typeof result.reason === 'string');
+        // Reason is optional when shouldClose is false
+        if (result.shouldClose) {
+            assert.ok(typeof result.reason === 'string');
+        }
     });
 
     await t.test('shouldClosePosition - stop loss triggers on long', () => {

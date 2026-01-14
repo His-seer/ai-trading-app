@@ -67,6 +67,10 @@ export const positionDb = {
     count: (userId = 1) => {
         return db.prepare('SELECT COUNT(*) as count FROM positions WHERE user_id = ?').get(userId).count;
     },
+
+    removeAll: () => {
+        return db.prepare('DELETE FROM positions').run();
+    },
 };
 
 // Trade operations
@@ -96,6 +100,10 @@ export const tradeDb = {
         });
     },
 
+    removeAll: () => {
+        return db.prepare('DELETE FROM trades').run();
+    },
+
     getStats: (userId = 1) => {
         const stats = db.prepare(`
       SELECT 
@@ -117,8 +125,8 @@ export const decisionDb = {
 
     create: (decision) => {
         const stmt = db.prepare(`
-      INSERT INTO decisions (user_id, symbol, market_type, current_price, ema_short, ema_long, rsi, recommendation, confidence, reasoning, action_taken)
-      VALUES (@userId, @symbol, @marketType, @currentPrice, @emaShort, @emaLong, @rsi, @recommendation, @confidence, @reasoning, @actionTaken)
+      INSERT INTO decisions (user_id, symbol, market_type, current_price, ema_short, ema_long, rsi, recommendation, confidence, reasoning, action_taken, ai_model)
+      VALUES (@userId, @symbol, @marketType, @currentPrice, @emaShort, @emaLong, @rsi, @recommendation, @confidence, @reasoning, @actionTaken, @aiModel)
     `);
         stmt.run({
             userId: decision.userId || 1,
@@ -132,6 +140,7 @@ export const decisionDb = {
             confidence: decision.confidence,
             reasoning: decision.reasoning,
             actionTaken: decision.actionTaken,
+            aiModel: decision.aiModel || 'gemini',
         });
     },
 

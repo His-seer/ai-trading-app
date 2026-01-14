@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS decisions (
   confidence TEXT CHECK(confidence IN ('high', 'medium', 'low')),
   reasoning TEXT NOT NULL,
   action_taken TEXT,
+  ai_model TEXT DEFAULT 'gemini' CHECK(ai_model IN ('gemini', 'openai')),
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );

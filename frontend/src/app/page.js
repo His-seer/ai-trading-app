@@ -56,9 +56,8 @@ function Dashboard() {
     const handleStartBot = async () => {
         try {
             await api.startBot(market);
-            setTimeout(() => {
-                fetchData();
-            }, 1000); // Wait for bot to start before fetching
+            // Optimistic update: Immediate fetch, don't wait for timeout
+            fetchData();
         } catch (err) {
             console.error('Start bot error:', err);
         }
@@ -76,10 +75,8 @@ function Dashboard() {
     const handleTriggerBot = async () => {
         try {
             await api.triggerBot();
-            // Wait a moment for processing to start/finish
-            setTimeout(() => {
-                fetchData();
-            }, 2000);
+            // Immediate fetch to show 'Scanning...' or results faster
+            fetchData();
         } catch (error) {
             console.error('Error triggering bot:', error);
         }
@@ -87,10 +84,16 @@ function Dashboard() {
 
     const handleClearDecisions = async () => {
         try {
+            // Optimistic update: Clear immediately
+            setDecisions([]);
             await api.clearDecisions();
+            // No need to re-fetch immediately if we just cleared it, 
+            // but fetching ensures sync. The UI is already clear though.
             fetchData();
         } catch (error) {
             console.error('Error clearing decisions:', error);
+            // Revert on error if needed, but for clear action it's rarely critical
+            fetchData();
         }
     };
 
@@ -193,7 +196,7 @@ function Dashboard() {
                     <StatCard
                         icon={<Clock />}
                         label="Trades Today"
-                        value={`${botStatus?.tradesToday || 0}/${botStatus?.maxTradesPerDay || 3}`}
+                        value={`${botStatus?.tradesToday || 0}/${botStatus?.maxTradesPerDay || 5}`}
                     />
                 </div>
 

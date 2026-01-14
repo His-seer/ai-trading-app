@@ -1,14 +1,28 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import config from '../../config/config.js';
+import { rateLimiterRegistry } from '../../utils/rateLimiter.js';
 
 /**
- * Gemini AI Service
+ * Gemini AI Service with OpenAI Fallback
  * Provides AI-assisted trading decisions with transparency
  */
 class GeminiService {
     constructor() {
         this.genAI = new GoogleGenerativeAI(config.geminiApiKey);
         this.model = this.genAI.getGenerativeModel({ model: config.geminiModel });
+        this.fallbackModel = this.genAI.getGenerativeModel({ model: config.fallbackGeminiModel });
+
+        // Rate limiter for Gemini API
+        const rateLimitConfig = config.rateLimit?.gemini || { maxRequests: 10, windowMs: 60000 };
+        this.rateLimiter = rateLimiterRegistry.getLimiter('gemini', {
+            maxTokens: rateLimitConfig.maxRequests,
+            windowMs: rateLimitConfig.windowMs,
+        });
+
+        // Circuit Breaker for Quota Limits
+        this.isGeminiQuotaExceeded = false;
+        this.quotaExceededTime = 0;
+        this.QUOTA_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour cooldown
     }
 
     /**
@@ -19,75 +33,126 @@ class GeminiService {
             ? `Currently HOLDING a ${currentPosition.side} position at $${currentPosition.entry_price}`
             : 'No open position';
 
-        return `You are a conservative trading assistant for an educational paper trading platform.
-Your role is to analyze market data and provide clear, explainable trading recommendations.
+        return `You are a Senior Technical Analyst for a professional trading desk.
+Your goal is to identify High Probability Setups while protecting capital.
 
-## Current Market Analysis for ${symbol} (${marketType.toUpperCase()})
+## Market Context for ${symbol} (${marketType.toUpperCase()})
 
-### Price Data
-- Current Price: $${indicators.currentPrice.toFixed(4)}
+### Price Action
+- Price: $${indicators.currentPrice.toFixed(4)}
+- Trend: ${indicators.analysis.trendDirection}
+- BB Position: ${((indicators.bollingerBands.percentB) * 100).toFixed(1)}% (0=Lower, 50=Middle, 100=Upper)
 
-### Technical Indicators
-- EMA 20 (Short-term): $${indicators.emaShort.toFixed(4)}
-- EMA 50 (Long-term): $${indicators.emaLong.toFixed(4)}
-- EMA Trend: ${indicators.emaShort > indicators.emaLong ? 'BULLISH (EMA20 > EMA50)' : 'BEARISH (EMA20 < EMA50)'}
-- RSI (14): ${indicators.rsi.toFixed(1)}
-${indicators.macd ? `- MACD Line: ${indicators.macd.macdLine.toFixed(4)}
-- MACD Signal: ${indicators.macd.signalLine.toFixed(4)}
-- MACD Histogram: ${indicators.macd.histogram.toFixed(4)}` : ''}
+### Momentum & Strength
+- RSI (14): ${indicators.rsi.toFixed(1)} (${indicators.analysis.rsiCondition})
+- MACD: ${indicators.macd ? `Hist: ${indicators.macd.histogram.toFixed(4)} (${indicators.macd.histogram > 0 ? 'Positive' : 'Negative'})` : 'N/A'}
 
-### Indicator Analysis
-${indicators.analysis.summary}
+### Volume Analysis
+- Volume Ratio: ${indicators.volume.ratio.toFixed(2)}x vs 20-day Avg
+- Status: ${indicators.volume.isHigh ? 'High Volume (Conviction)' : (indicators.volume.isLow ? 'Low Volume (Weakness)' : 'Normal Volume (Neutral)')}
 
 ### Position Status
 ${positionStatus}
 
-## Trading Rules (MUST Follow)
-BUY Conditions (ALL must be true):
-1. EMA 20 > EMA 50 (uptrend confirmed)
-2. RSI > 55 (bullish momentum)
-3. No existing position
-
-SELL/EXIT Conditions (ANY can trigger):
-1. EMA 20 < EMA 50 (trend reversal)
-2. RSI < 45 (momentum weakening)
-
-HOLD: When conditions are unclear or mixed
+## Trading Rules & Strategy
+We look for CONFLUENCE of factors. 
+1. **Trend is King**: Prefer trades in direction of EMATrend.
+2. **Momentum**: RSI > 50 supports Buy, RSI < 50 supports Sell.
+3. **Volume Validation**: Breakouts need High Volume (> 1.2x avg).
+4. **Bollinger Bands**: 
+   - Squeeze (Narrow Bands) = Potential explosive move coming.
+   - Price > Upper Band = Potentially Overextended (watch for reversal).
+   - Price < Lower Band = Potentially Oversold.
 
 ## Your Task
-Analyze the data above and provide:
-1. A recommendation: BUY, SELL, or HOLD
-2. Confidence level: high, medium, or low
-3. Clear reasoning explaining your decision (2-3 sentences)
+Analyze all factors and provide a Trade Quality Score (0-10).
+- Score < 4: NO TRADE / WEAK
+- Score 5-7: MODERATE / SPECULATIVE BUY (If risk is low)
+- Score 8-10: HIGH PROBABILITY / ACTIONABLE
 
 Format your response EXACTLY like this:
 RECOMMENDATION: [BUY/SELL/HOLD]
 CONFIDENCE: [high/medium/low]
-REASONING: [Your clear explanation here]
+SCORE: [0-10]
+REASONING: [Clear, professional analysis citing specific indicators (e.g. "RSI is 60 and Volume is 1.5x, confirming the breakout...")]
 
-Be conservative. If in doubt, recommend HOLD. Never recommend against the trading rules.`;
+Be precise. If volume is low, downgrade the score. If trend is unclear, recommend HOLD.`;
     }
 
     /**
-     * Get trading recommendation from Gemini
+     * Get trading recommendation from Gemini (Primary) with Gemini (Fallback)
      */
     async getRecommendation(symbol, marketType, indicators, currentPosition = null) {
-        try {
-            const prompt = this.buildPrompt(symbol, marketType, indicators, currentPosition);
+        // Check circuit breaker
+        const now = Date.now();
+        if (this.isGeminiQuotaExceeded) {
+            if (now - this.quotaExceededTime < this.QUOTA_COOLDOWN_MS) {
+                return {
+                    recommendation: 'HOLD',
+                    confidence: 'low',
+                    reasoning: 'AI analysis paused due to API quota limits. Using technical indicators only.',
+                    aiModel: 'none (circuit breaker)',
+                    error: true
+                };
+            } else {
+                console.log('🔄 AI Quota cooldown expired. Attempting to resume services...');
+                this.isGeminiQuotaExceeded = false;
+            }
+        }
 
-            const result = await this.model.generateContent(prompt);
+        const prompt = this.buildPrompt(symbol, marketType, indicators, currentPosition);
+
+        // helper to execute generation
+        const generate = async (modelInstance, modelName) => {
+            await this.rateLimiter.acquire();
+            const result = await this.retryWithBackoff(async () => {
+                return await modelInstance.generateContent(prompt);
+            });
             const response = await result.response;
             const text = response.text();
+            const parsed = this.parseResponse(text);
+            return { ...parsed, aiModel: modelName };
+        };
 
-            return this.parseResponse(text);
-        } catch (error) {
-            console.error('Gemini API error:', error.message);
-            return {
-                recommendation: 'HOLD',
-                confidence: 'low',
-                reasoning: `AI analysis unavailable: ${error.message}. Defaulting to HOLD.`,
-                error: true,
-            };
+        // 1. Try Primary Model
+        try {
+            return await generate(this.model, 'gemini-primary');
+        } catch (primaryError) {
+            this.handleGeminiError(primaryError, 'Primary');
+            // Proceed to fallback
+        }
+
+        // 2. Try Fallback Model
+        console.log(`⚠️ Switching to Fallback Model: ${config.fallbackGeminiModel}`);
+        try {
+            return await generate(this.fallbackModel, 'gemini-fallback');
+        } catch (fallbackError) {
+            this.handleGeminiError(fallbackError, 'Fallback');
+        }
+
+        // 3. Both failed
+        return {
+            recommendation: 'HOLD',
+            confidence: 'low',
+            reasoning: 'AI analysis unavailable (Both models failed). Defaulting to safe HOLD.',
+            error: true,
+            aiModel: 'none',
+        };
+    }
+
+    handleGeminiError(error, source) {
+        const isQuota = error.message.includes('429') ||
+            error.message.toLowerCase().includes('quota') ||
+            error.message.toLowerCase().includes('limit');
+
+        if (isQuota) {
+            console.warn(`⚠️ Gemini ${source} Quota Exceeded. Circuit breaker tripped.`);
+            this.isGeminiQuotaExceeded = true;
+            this.quotaExceededTime = Date.now();
+        } else if (error.message.includes('503')) {
+            console.warn(`⚠️ Gemini ${source} Service Overloaded.`);
+        } else {
+            console.error(`Gemini ${source} Error:`, error.message);
         }
     }
 
@@ -98,6 +163,7 @@ Be conservative. If in doubt, recommend HOLD. Never recommend against the tradin
         const lines = text.trim().split('\n');
         let recommendation = 'HOLD';
         let confidence = 'medium';
+        let score = 0;
         let reasoning = '';
 
         for (const line of lines) {
@@ -111,6 +177,9 @@ Be conservative. If in doubt, recommend HOLD. Never recommend against the tradin
                 if (['high', 'medium', 'low'].includes(conf)) {
                     confidence = conf;
                 }
+            } else if (line.startsWith('SCORE:')) {
+                const scoreStr = line.replace('SCORE:', '').trim();
+                score = parseInt(scoreStr) || 0;
             } else if (line.startsWith('REASONING:')) {
                 reasoning = line.replace('REASONING:', '').trim();
             }
@@ -132,6 +201,7 @@ Be conservative. If in doubt, recommend HOLD. Never recommend against the tradin
         return {
             recommendation,
             confidence,
+            score,
             reasoning,
             rawResponse: text,
         };
@@ -150,7 +220,12 @@ Be conservative. If in doubt, recommend HOLD. Never recommend against the tradin
         const prompt = prompts[indicatorName] || `Explain the ${indicatorName} indicator value of ${value} in simple terms.`;
 
         try {
-            const result = await this.model.generateContent(prompt);
+            // Wait for rate limit token before calling Gemini API
+            await this.rateLimiter.acquire();
+
+            const result = await this.retryWithBackoff(async () => {
+                return await this.model.generateContent(prompt);
+            });
             return result.response.text();
         } catch (error) {
             return `${indicatorName} is currently at ${value}.`;
@@ -162,10 +237,37 @@ Be conservative. If in doubt, recommend HOLD. Never recommend against the tradin
      */
     async healthCheck() {
         try {
+            // Wait for rate limit token before calling Gemini API
+            await this.rateLimiter.acquire();
+
             const result = await this.model.generateContent('Say "OK"');
             return result.response.text().includes('OK');
         } catch (error) {
             return false;
+        }
+    }
+
+    /**
+     * Helper: Retry operation with exponential backoff
+     */
+    async retryWithBackoff(operation, maxRetries = 3, initialDelay = 1000) {
+        let retries = 0;
+        while (true) {
+            try {
+                return await operation();
+            } catch (error) {
+                // Only retry on 503 (Service Unavailable / Overloaded)
+                const isOverloaded = error.message.includes('503') || error.message.includes('overloaded');
+
+                if (isOverloaded && retries < maxRetries) {
+                    retries++;
+                    const delay = initialDelay * Math.pow(2, retries - 1); // 1s, 2s, 4s...
+                    console.log(`⚠️ Gemini Overloaded. Retrying in ${delay}ms (Attempt ${retries}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                } else {
+                    throw error;
+                }
+            }
         }
     }
 }

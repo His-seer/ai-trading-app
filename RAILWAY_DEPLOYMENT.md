@@ -34,6 +34,8 @@ git push origin main
 | `FINNHUB_API_KEY` | Your Finnhub API key |
 | `NODE_ENV` | `production` |
 | `PORT` | `3001` |
+| `INITIAL_BALANCE` | `1000` (Optional, default 10000) |
+| `AUTO_START_BOT` | `true` (Optional, auto-starts trading) |
 
 5. In **Settings** → **Networking**, generate a public domain
 6. Copy the backend URL (e.g., `https://your-backend.railway.app`)

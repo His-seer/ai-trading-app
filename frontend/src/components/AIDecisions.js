@@ -63,9 +63,17 @@ export default function AIDecisions({ decisions, onClear }) {
                                 </span>
                             </div>
                             <div className={styles.confidence}>
+                                {decision.score !== undefined && (
+                                    <span className={`${styles.scoreBadge} ${decision.score >= 8 ? styles.highScore : styles.midScore}`}>
+                                        Score: {decision.score}/10
+                                    </span>
+                                )}
                                 <span className={`${styles.confidenceBadge} ${styles[decision.confidence]}`}>
                                     {decision.confidence}
                                 </span>
+                                {decision.recommendation === 'BUY' && decision.score < 8 && decision.score >= 5 && (
+                                    <span className={styles.speculativeTag}>Speculative</span>
+                                )}
                             </div>
                         </div>
 

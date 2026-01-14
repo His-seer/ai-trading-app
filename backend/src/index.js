@@ -9,6 +9,7 @@ import { initializeDatabase } from './db/database.js';
 import apiRoutes from './routes/api.js';
 import { logger, createLoggerMiddleware, createErrorHandlerMiddleware } from './utils/logger.js';
 import { validateAndExit } from './utils/envValidator.js';
+import { AutonomyLoop } from './scheduler/autonomyLoop.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -117,6 +118,9 @@ process.on('SIGINT', () => {
     isShuttingDown = true;
 });
 
+// Initialize autonomy loop instance
+let autonomyLoop = null;
+
 // Start server
 const PORT = config.port;
 const server = app.listen(PORT, () => {
@@ -136,11 +140,81 @@ const server = app.listen(PORT, () => {
 ║  Finnhub API: ${config.finnhubApiKey ? '✅ Configured'.padEnd(42) : '❌ Not configured'.padEnd(42)}║
 ╚═══════════════════════════════════════════════════════════╝
   `);
+
+    // Initialize and optionally auto-start autonomy loop
+    autonomyLoop = new AutonomyLoop();
+
+    const autoStartBot = process.env.AUTO_START_BOT === 'true';
+    if (autoStartBot) {
+        logger.info('Auto-starting trading bot (AUTO_START_BOT=true)');
+        autonomyLoop.start('stock');
+        logger.info('Trading bot started automatically');
+    } else {
+        logger.info('Trading bot ready - start with POST /api/bot/start (AUTO_START_BOT not set)');
+    }
 });
 
 // Handle server shutdown
 server.on('close', () => {
     logger.info('Server closed');
+});
+
+// Global error handlers for production reliability
+process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception - shutting down', {
+        message: error.message,
+        stack: error.stack,
+    });
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection - shutting down', {
+        reason: reason instanceof Error ? reason.message : String(reason),
+        promise: String(promise),
+    });
+    process.exit(1);
+});
+
+// Handle graceful shutdown with timeout
+const SHUTDOWN_TIMEOUT = 30000; // 30 seconds
+process.on('SIGTERM', () => {
+    logger.info('SIGTERM received, starting graceful shutdown');
+    isShuttingDown = true;
+
+    // Stop autonomy loop if running
+    if (autonomyLoop && autonomyLoop.isRunning) {
+        logger.info('Stopping trading bot');
+        autonomyLoop.stop();
+    }
+
+    // Close server with timeout
+    const shutdownTimer = setTimeout(() => {
+        logger.error('Forced shutdown - graceful shutdown timeout exceeded');
+        process.exit(1);
+    }, SHUTDOWN_TIMEOUT);
+
+    server.close(() => {
+        clearTimeout(shutdownTimer);
+        logger.info('Server closed gracefully');
+        process.exit(0);
+    });
+});
+
+process.on('SIGINT', () => {
+    logger.info('SIGINT received, starting graceful shutdown');
+    isShuttingDown = true;
+
+    // Stop autonomy loop if running
+    if (autonomyLoop && autonomyLoop.isRunning) {
+        logger.info('Stopping trading bot');
+        autonomyLoop.stop();
+    }
+
+    server.close(() => {
+        logger.info('Server closed gracefully');
+        process.exit(0);
+    });
 });
 
 export default app;

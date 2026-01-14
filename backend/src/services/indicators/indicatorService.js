@@ -127,6 +127,85 @@ class IndicatorService {
     }
 
     /**
+     * Calculate Volume SMA (Simple Moving Average)
+     * @param {number[]} volumes - Array of volume data
+     * @param {number} period - SMA period (default 20)
+     * @returns {number[]} Array of SMA values
+     */
+    calculateVolumeSMA(volumes, period = 20) {
+        if (volumes.length < period) {
+            // Not enough data, return array of zeros or partial avgs
+            // For safety, just return array of last volume repeated if really short, 
+            // but better to return partial averages.
+            // Simpler: if not enough data, just return the volume itself as "average" (fallback)
+            return volumes;
+        }
+
+        const sma = [];
+        for (let i = 0; i < volumes.length; i++) {
+            if (i < period - 1) {
+                sma.push(volumes[i]); // Not enough data yet
+                continue;
+            }
+
+            let sum = 0;
+            for (let j = 0; j < period; j++) {
+                sum += volumes[i - j];
+            }
+            sma.push(sum / period);
+        }
+        return sma;
+    }
+
+    /**
+     * Calculate Bollinger Bands
+     * @param {number[]} prices - Array of closing prices
+     * @param {number} period - SMA period (default 20)
+     * @param {number} stdDev - Standard deviation multiplier (default 2)
+     * @returns {Object} Arrays for upper, middle, lower bands
+     */
+    calculateBollingerBands(prices, period = 20, stdDev = 2) {
+        if (prices.length < period) {
+            return { upper: prices, middle: prices, lower: prices };
+        }
+
+        const middle = []; // This is the SMA
+        const upper = [];
+        const lower = [];
+
+        for (let i = 0; i < prices.length; i++) {
+            if (i < period - 1) {
+                // Not enough data
+                middle.push(prices[i]);
+                upper.push(prices[i]);
+                lower.push(prices[i]);
+                continue;
+            }
+
+            // Calculate SMA (Middle Band)
+            let sum = 0;
+            for (let j = 0; j < period; j++) {
+                sum += prices[i - j];
+            }
+            const sma = sum / period;
+            middle.push(sma);
+
+            // Calculate Standard Deviation
+            let sumSqDiff = 0;
+            for (let j = 0; j < period; j++) {
+                const diff = prices[i - j] - sma;
+                sumSqDiff += diff * diff;
+            }
+            const sd = Math.sqrt(sumSqDiff / period);
+
+            upper.push(sma + (sd * stdDev));
+            lower.push(sma - (sd * stdDev));
+        }
+
+        return { upper, middle, lower };
+    }
+
+    /**
      * Get all indicators for a symbol with explanations
      * @param {Object[]} candles - Historical candle data
      * @returns {Object} All calculated indicators with explanations
@@ -140,11 +219,27 @@ class IndicatorService {
         const emaLongValues = this.calculateEMA(prices, emaLong);
         const rsiValues = this.calculateRSI(prices, rsiPeriod);
 
+        // Calculate Volume SMA
+        const volumes = candles.map(c => c.volume);
+        const volumeSMAValues = this.calculateVolumeSMA(volumes, 20);
+
+        // Calculate Bollinger Bands
+        const bbValues = this.calculateBollingerBands(prices, 20, 2);
+
         // Get latest values
         const currentEmaShort = emaShortValues[emaShortValues.length - 1];
         const currentEmaLong = emaLongValues[emaLongValues.length - 1];
         const currentRsi = rsiValues[rsiValues.length - 1];
         const currentPrice = prices[prices.length - 1];
+
+        const currentVolume = volumes[volumes.length - 1];
+        const currentVolumeSMA = volumeSMAValues[volumeSMAValues.length - 1];
+
+        const currentBB = {
+            upper: bbValues.upper[bbValues.upper.length - 1],
+            middle: bbValues.middle[bbValues.middle.length - 1],
+            lower: bbValues.lower[bbValues.lower.length - 1]
+        };
 
         // Generate explanations
         const trendDirection = currentEmaShort > currentEmaLong ? 'UPTREND' : 'DOWNTREND';
@@ -164,6 +259,19 @@ class IndicatorService {
             emaLong: currentEmaLong,
             rsi: currentRsi,
             macd,
+            volume: {
+                current: currentVolume,
+                average: currentVolumeSMA,
+                isHigh: currentVolume > currentVolumeSMA * 1.2,
+                isLow: currentVolume < currentVolumeSMA * 0.8,
+                // If volume is 0 (missing), ratio is 1.0 (Neutral)
+                ratio: (currentVolume > 0 && currentVolumeSMA > 0) ? (currentVolume / currentVolumeSMA) : 1.0
+            },
+            bollingerBands: {
+                ...currentBB,
+                percentB: (currentPrice - currentBB.lower) / (currentBB.upper - currentBB.lower),
+                bandwidth: (currentBB.upper - currentBB.lower) / currentBB.middle
+            },
             analysis: {
                 trendDirection,
                 emaCrossover,

@@ -1,5 +1,6 @@
-import { userDb, positionDb, tradeDb, botDb } from '../../db/database.js';
+import { userDb, positionDb, tradeDb, botDb, decisionDb } from '../../db/database.js';
 import riskManager from '../risk/riskManager.js';
+import config from '../../config/config.js';
 
 /**
  * Paper Trading Engine
@@ -12,6 +13,17 @@ class TradingEngine {
     openPosition(symbol, marketType, side, entryPrice, aiReasoning) {
         // Get current user balance
         const user = userDb.get();
+
+        // Validate inputs
+        const validMarkets = ['stock', 'forex'];
+        const validSides = ['long', 'short'];
+
+        if (!validMarkets.includes(marketType)) {
+            return { success: false, error: 'Invalid market type' };
+        }
+        if (!validSides.includes(side)) {
+            return { success: false, error: 'Invalid side' };
+        }
 
         // Calculate stop levels
         const { stopLoss, takeProfit, riskRewardRatio } = riskManager.calculateStopLevels(
@@ -60,7 +72,7 @@ class TradingEngine {
                 riskAmount,
                 riskRewardRatio,
             },
-            message: `Opened ${side.toUpperCase()} position for ${symbol} at $${entryPrice.toFixed(4)}`,
+            message: `Opened ${side.toUpperCase()} position for ${symbol} at $${entryPrice.toFixed(4)} `,
             reasoning: aiReasoning,
         };
     }
@@ -162,9 +174,9 @@ class TradingEngine {
 
         return {
             balance: user.balance,
-            initialBalance: 10000, // From config
-            totalProfitLoss: user.balance - 10000,
-            totalProfitLossPercent: ((user.balance - 10000) / 10000) * 100,
+            initialBalance: config.initialBalance,
+            totalProfitLoss: user.balance - config.initialBalance,
+            totalProfitLossPercent: ((user.balance - config.initialBalance) / config.initialBalance) * 100,
             openPositions: positions,
             openPositionsCount: positions.length,
             openPositionsValue,
@@ -188,11 +200,27 @@ class TradingEngine {
     }
 
     /**
-     * Reset account to initial balance (for testing)
+     * Reset account to initial balance and clear all history
      */
     resetAccount(userId = 1) {
-        userDb.updateBalance(userId, 10000);
-        return { success: true, message: 'Account reset to $10,000' };
+        // 1. Reset Balance
+        userDb.updateBalance(userId, config.initialBalance);
+
+        // 2. Clear all positions
+        positionDb.removeAll();
+
+        // 3. Clear all trade history
+        tradeDb.removeAll();
+
+        // 4. Clear decision logs
+        if (decisionDb) {
+            decisionDb.clearAll();
+        }
+
+        // 5. Reset Daily Trade Counter
+        botDb.resetDailyTrades();
+
+        return { success: true, message: `Account fully reset to $${config.initialBalance.toLocaleString()}. All history cleared.` };
     }
 }
 
