@@ -130,16 +130,6 @@ const server = app.listen(PORT, () => {
         finnhubApiConfigured: !!config.finnhubApiKey,
     });
 
-    console.log(`
-╔═══════════════════════════════════════════════════════════╗
-║          AI Trading Platform - Backend Server             ║
-╠═══════════════════════════════════════════════════════════╣
-║  Server running on: http://localhost:${PORT}                  ║
-║  Environment: ${config.nodeEnv.padEnd(42)}║
-║  Gemini API: ${config.geminiApiKey ? '✅ Configured'.padEnd(43) : '❌ Not configured'.padEnd(43)}║
-║  Finnhub API: ${config.finnhubApiKey ? '✅ Configured'.padEnd(42) : '❌ Not configured'.padEnd(42)}║
-╚═══════════════════════════════════════════════════════════╝
-  `);
 
     // Initialize and optionally auto-start autonomy loop
     autonomyLoop = new AutonomyLoop();
