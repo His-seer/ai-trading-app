@@ -25,7 +25,8 @@ git push origin main
 1. Go to [Railway Dashboard](https://railway.app/dashboard)
 2. Click **"New Project"** → **"Deploy from GitHub repo"**
 3. Select your repository
-4. Click **"Add variables"** and add:
+4. **IMPORTANT**: Click **"Variable/Settings"** or go to **Settings** -> **General** -> **Root Directory** and set it to `/backend`.
+5. Click **"Add variables"** and add:
 
 | Variable | Value |
 |----------|-------|
