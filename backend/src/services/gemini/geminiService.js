@@ -139,7 +139,7 @@ Be precise. If volume is low, downgrade the score. If trend is unclear, recommen
             confidence: 'low',
             reasoning: 'AI analysis unavailable (Both models failed). Defaulting to safe HOLD.',
             error: true,
-            aiModel: 'none',
+            aiModel: 'gemini',
         };
     }
 
