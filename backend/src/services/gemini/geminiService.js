@@ -111,7 +111,10 @@ Be precise. If volume is low, downgrade the score. If trend is unclear, recommen
             const response = await result.response;
             const text = response.text();
             const parsed = this.parseResponse(text);
-            return { ...parsed, aiModel: modelName };
+            // Append model version to reasoning for transparency, but keep 'gemini' 
+            // as the aiModel key to satisfy strict DB CHECK constraints.
+            parsed.reasoning = `[Model: ${modelName}] ${parsed.reasoning}`;
+            return { ...parsed, aiModel: 'gemini' };
         };
 
         // 1. Try Primary Model
