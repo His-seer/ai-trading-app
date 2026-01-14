@@ -91,15 +91,19 @@ class AutonomyLoop {
 
         botDb.updateLastCheck();
 
-        const symbols = this.currentMarket === 'stock' ? config.stocks : config.forex;
+        // Combine both lists to check everything
+        const symbols = [...config.stocks, ...config.forex];
         const user = userDb.get();
 
         for (const symbol of symbols) {
             try {
-                console.log(`\n📈 Analyzing ${symbol}...`);
+                // Determine market type for this specific symbol
+                const marketType = config.stocks.includes(symbol) ? 'stock' : 'forex';
+
+                console.log(`\n📈 Analyzing ${symbol} (${marketType.toUpperCase()})...`);
 
                 // Step 1: Fetch market data
-                const { quote, candles } = await marketDataService.getMarketData(symbol, this.currentMarket);
+                const { quote, candles } = await marketDataService.getMarketData(symbol, marketType);
                 console.log(`  Current price: $${quote.currentPrice.toFixed(4)}`);
 
                 // Step 2: Calculate indicators
@@ -114,7 +118,7 @@ class AutonomyLoop {
                 // Step 4: Get AI recommendation
                 const aiDecision = await geminiService.getRecommendation(
                     symbol,
-                    this.currentMarket,
+                    marketType,
                     indicators,
                     existingPosition
                 );
@@ -124,7 +128,7 @@ class AutonomyLoop {
                 // Step 5: Apply risk rules and execute
                 const actionResult = await this.executeDecision(
                     symbol,
-                    this.currentMarket,
+                    marketType,
                     aiDecision,
                     indicators,
                     existingPosition,
@@ -134,7 +138,7 @@ class AutonomyLoop {
                 // Step 6: Log decision
                 decisionDb.create({
                     symbol,
-                    marketType: this.currentMarket,
+                    marketType: marketType,
                     currentPrice: indicators.currentPrice,
                     emaShort: indicators.emaShort,
                     emaLong: indicators.emaLong,
@@ -151,8 +155,8 @@ class AutonomyLoop {
                     console.log(`  Result: ${actionResult.message}`);
                 }
 
-                // Small delay between symbols to respect rate limits
-                await this.delay(1000);
+                // Increased delay to 5s to respect rate limits with more assets
+                await this.delay(5000);
 
             } catch (error) {
                 console.error(`  ❌ Error analyzing ${symbol}:`, error.message);

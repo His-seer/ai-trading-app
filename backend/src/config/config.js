@@ -18,8 +18,8 @@ const config = {
     autonomyIntervalMinutes: parseInt(process.env.AUTONOMY_INTERVAL_MINUTES) || 15,
 
     // Supported Assets
-    stocks: ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'AMZN'],
-    forex: ['EUR/USD', 'GBP/USD', 'USD/JPY', 'AUD/USD'],
+    stocks: ['AAPL', 'MSFT', 'NVDA', 'GOOGL'],
+    forex: ['EUR/USD', 'GBP/USD', 'USD/JPY'],
     crypto: [],
     globalStocks: [],
 
